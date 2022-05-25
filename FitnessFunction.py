@@ -51,11 +51,12 @@ class DeceptiveTrap(FitnessFunction):
 		super().evaluate(individual)
 
 class MaxCut(FitnessFunction):
-	def __init__( self, instance_file ):
+	def __init__( self, instance_file, clique_size = 0 ):
 		super().__init__()
 		self.edge_list = []
 		self.weights = {}
 		self.adjacency_list = {}
+		self.clique_size = clique_size
 		self.read_problem_instance(instance_file)
 		self.read_value_to_reach(instance_file)
 		self.preprocess()
@@ -85,6 +86,10 @@ class MaxCut(FitnessFunction):
 					self.adjacency_list[v1] = []
 				self.adjacency_list[v0].append(v1)
 				self.adjacency_list[v1].append(v0)
+
+			if(self.clique_size > 0):
+				self.cliques = self.get_cliques(self.adjacency_list, self.clique_size)
+
 			assert( len(self.edge_list) == number_of_edges )
 	
 	def read_value_to_reach( self, instance_file ):
@@ -112,4 +117,30 @@ class MaxCut(FitnessFunction):
 
 		individual.fitness = result
 		super().evaluate(individual)
+
+	def get_cliques(self, adjacency_list, clique_size):
+		cliques = []
+
+		while( len(adjacency_list) > 0 ):
+			clique = []
+			w = None
+			for v in adjacency_list:
+				if( len(adjacency_list[v]) == clique_size - 1 ):
+					w = v
+					break
+
+			if w is None:
+				print("Error: clique not found")
+				break
+			
+			clique.append(w)
+			clique.extend(adjacency_list[w])
+			cliques.append(clique)
+
+			for v in adjacency_list[w]:
+				del adjacency_list[v]
+			del adjacency_list[w]
+
+		return cliques
+
 
