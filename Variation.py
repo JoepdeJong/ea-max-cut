@@ -81,6 +81,35 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 		offspring_a.genotype[clique] = sorted_individuals[0].genotype[clique]
 		offspring_b.genotype[clique] = sorted_individuals[1].genotype[clique]
 
+
 	# TODO: one-points crossover between cliques
-	return [offspring_a, offspring_b]
+	# For this, we have to know the order of the cliques in the chain, since we want to crossover between cliques and crossover all the cliques after the crossover point.
+	
+	# Pick a random clique
+	clique_a = np.random.randint(len(individual_a.cliques))
+	clique_b = np.random.randint(len(individual_b.cliques))
+	offspring_a2 = Individual(l)
+	offspring_b2 = Individual(l)
+	offspring_a2.genotype = individual_a.genotype
+	offspring_b2.genotype = individual_b.genotype
+	offspring_a2.cliques = individual_a.cliques
+	offspring_b2.cliques = individual_b.cliques
+
+	offspring_a2.genotype[individual_a.cliques[clique_a]] = 1 - individual_a.genotype[individual_a.cliques[clique_a]]
+	offspring_b2.genotype[individual_b.cliques[clique_b]] = 1 - individual_b.genotype[individual_b.cliques[clique_b]]
+
+	# Compute fitness of the offsprings:
+	fitness.evaluate(offspring_a)
+	fitness.evaluate(offspring_b)
+	fitness.evaluate(offspring_a2)
+	fitness.evaluate(offspring_b2)
+
+	individuals = [
+		offspring_a, offspring_b,
+		offspring_a2, offspring_b2
+	]
+	sorted_individuals = sorted(individuals, key=lambda x: x.fitness, reverse=True)
+		
+
+	return [sorted_individuals[0], sorted_individuals[1]]
 
