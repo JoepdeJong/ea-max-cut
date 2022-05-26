@@ -39,6 +39,7 @@ class GeneticAlgorithm:
 	def initialize_population( self ):
 		self.population = [Individual.initialize_uniform_at_random(self.fitness.dimensionality) for i in range(self.population_size)]
 		for individual in self.population:
+			individual.cliques = self.fitness.cliques
 			self.fitness.evaluate(individual)
 
 	def make_offspring( self ):

@@ -3,7 +3,7 @@ import numpy as np
 from Individual import Individual
 from FitnessFunction import FitnessFunction
 
-def uniform_crossover(individual_a: Individual, individual_b: Individual, p = 0.5 ):
+def uniform_crossover(individual_a: Individual, individual_b: Individual, p = 0.5, clique = [] ):
 	assert len(individual_a.genotype) == len(individual_b.genotype), "solutions should be equal in size"
 	l = len(individual_a.genotype)
 	offspring_a = Individual(l)
@@ -42,13 +42,45 @@ def two_point_crossover(individual_a: Individual, individual_b: Individual ):
 
 def custom_crossover( fitness: FitnessFunction, individual_a: Individual, individual_b: Individual ):
 	assert len(individual_a.genotype) == len(individual_b.genotype), "solutions should be equal in size"
-	l = len(individual_a.genotype)
+	l = np.zeros(len(individual_a.genotype))
 	offspring_a = Individual(l)
 	offspring_b = Individual(l)
-   
-   	# Implement your custom crossover here
-	offspring_a.genotype = individual_a.genotype.copy()
-	offspring_b.genotype = individual_b.genotype.copy()
-	
+	offspring_a.cliques = individual_a.cliques
+	offspring_b.cliques = individual_b.cliques
+
+	# Loop over all the cliques:
+	for clique in individual_a.cliques:
+
+		# Create parents inside the clique:
+		parent_a_c = Individual(l)
+		parent_b_c = Individual(l)
+
+		parent_a_c.genotype[clique] = individual_a.genotype[clique]
+		parent_b_c.genotype[clique] = individual_b.genotype[clique]
+
+		# Compute fitness of the parents:
+		fitness.evaluate(parent_a_c)
+		fitness.evaluate(parent_b_c)
+
+		# Perform crossover inside the clique to generate the offsprings
+		offspring_a_c, offspring_b_c = uniform_crossover(parent_a_c, parent_b_c)
+
+		# Compute fitness of the offsprings:
+		fitness.evaluate(offspring_a_c)
+		fitness.evaluate(offspring_b_c)
+
+		# Find the 2 best individuals from the parents and offsprings
+		individuals = [
+			parent_a_c, parent_b_c,
+			offspring_a_c, offspring_b_c
+		]
+
+		sorted_individuals = sorted(individuals, key=lambda x: x.fitness, reverse=True)
+
+		# Use the genotype of the best two individuals
+		offspring_a.genotype[clique] = sorted_individuals[0].genotype[clique]
+		offspring_b.genotype[clique] = sorted_individuals[1].genotype[clique]
+
+	# TODO: one-points crossover between cliques
 	return [offspring_a, offspring_b]
 

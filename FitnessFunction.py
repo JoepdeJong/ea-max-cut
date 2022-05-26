@@ -88,7 +88,7 @@ class MaxCut(FitnessFunction):
 				self.adjacency_list[v1].append(v0)
 
 			if(self.clique_size > 0):
-				self.cliques = self.get_cliques(self.adjacency_list, self.clique_size)
+				self.cliques, self.inter_clique_edges = self.get_cliques(self.adjacency_list, self.clique_size)
 
 			assert( len(self.edge_list) == number_of_edges )
 	
@@ -121,6 +121,15 @@ class MaxCut(FitnessFunction):
 	def get_cliques(self, adjacency_list, clique_size):
 		cliques = []
 
+		inter_clique_edges = []
+		for v in adjacency_list:
+			# Find nodes with out_degree the same as clique size. (without counting the node itself, this means that this node has an edge to a node outside the clique)
+			if len(adjacency_list[v]) == clique_size:
+				# Find the adjacent node that is also an 'inter clique' node.
+				for v_adj in adjacency_list[v]:
+					if len(adjacency_list[v_adj]) == clique_size:
+						inter_clique_edges.append((v,v_adj))
+
 		while( len(adjacency_list) > 0 ):
 			clique = []
 			w = None
@@ -141,6 +150,6 @@ class MaxCut(FitnessFunction):
 				del adjacency_list[v]
 			del adjacency_list[w]
 
-		return cliques
+		return cliques, inter_clique_edges
 
 
