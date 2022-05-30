@@ -1,1 +1,2 @@
-population_size, num_succes/num_runs, 10th percentile, 50th percentile, 90th percentile500, 1.0, 30.5, 137.5, 307.20000000000005
+population_size, num_succes/num_runs, 10th percentile, 50th percentile, 90th percentile
+500, 1.0, 30.5, 137.5, 307.20000000000005
