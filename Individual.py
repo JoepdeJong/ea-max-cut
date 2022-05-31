@@ -4,6 +4,7 @@ class Individual:
 	def __init__(self, genotype = [], number_of_cliques = None ):
 		self.genotype = np.array(genotype)
 		self.fitness = 0
+		self.cliques = []
 		self.partial_fitness = np.zeros(number_of_cliques)
 
 	
