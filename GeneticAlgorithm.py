@@ -41,11 +41,11 @@ class GeneticAlgorithm:
 			individual.cliques = self.fitness.cliques
 			self.fitness.evaluate(individual)
 
-			if individual.cliques:
-				# Compute the fitness of every clique in the individual
-				individual.partial_fitness = np.zeros(len(individual.cliques))
-				for clique_number, clique in enumerate(individual.cliques):
-					self.fitness.evaluate_partial(individual, clique_number)
+			
+			# Compute the fitness of every clique in the individual
+			individual.partial_fitness = np.zeros(len(individual.cliques))
+			for clique_number, clique in enumerate(individual.cliques):
+				self.fitness.evaluate_partial(individual, clique_number)
 
 	def make_offspring( self ):
 		offspring = []
@@ -55,11 +55,10 @@ class GeneticAlgorithm:
 		for individual in offspring:
 			self.fitness.evaluate(individual)
 
-			if individual.cliques:
-				# Compute the fitness of every clique in the individual
-				individual.partial_fitness = np.zeros(len(individual.cliques))
-				for clique_number, clique in enumerate(individual.cliques):
-					self.fitness.evaluate_partial(individual, clique_number)
+			# Compute the fitness of every clique in the individual
+			individual.partial_fitness = np.zeros(len(individual.cliques))
+			for clique_number, clique in enumerate(individual.cliques):
+				self.fitness.evaluate_partial(individual, clique_number)
 		return offspring
 
 	def make_selection( self, offspring ):
