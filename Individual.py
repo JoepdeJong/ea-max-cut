@@ -1,9 +1,11 @@
 import numpy as np
 
 class Individual:
-	def __init__(self, genotype = [] ):
+	def __init__(self, genotype = [], number_of_cliques = None ):
 		self.genotype = np.array(genotype)
 		self.fitness = 0
+		self.partial_fitness = np.zeros(number_of_cliques)
+
 	
 	def initialize_uniform_at_random(genotype_length):
 		individual = Individual()
