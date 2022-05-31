@@ -1,5 +1,4 @@
 import numpy as np
-import time
 from functools import partial 
 
 import Variation
