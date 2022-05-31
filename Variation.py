@@ -49,7 +49,7 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 	offspring_b.cliques = individual_b.cliques
 
 	# Loop over all the cliques:
-	for clique in individual_a.cliques:
+	for clique_number, clique in enumerate(individual_a.cliques):
 
 		# Create parents inside the clique:
 		parent_a_c = Individual(l)
@@ -59,15 +59,15 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 		parent_b_c.genotype[clique] = individual_b.genotype[clique]
 
 		# Compute fitness of the parents:
-		fitness.evaluate(parent_a_c)
-		fitness.evaluate(parent_b_c)
+		fitness.evaluate_partial(parent_a_c, clique_number)
+		fitness.evaluate_partial(parent_b_c, clique_number)
 
 		# Perform crossover inside the clique to generate the offsprings
 		offspring_a_c, offspring_b_c = uniform_crossover(parent_a_c, parent_b_c)
 
 		# Compute fitness of the offsprings:
-		fitness.evaluate(offspring_a_c)
-		fitness.evaluate(offspring_b_c)
+		fitness.evaluate_partial(offspring_a_c, clique_number)
+		fitness.evaluate_partial(offspring_b_c, clique_number)
 
 		# Find the 2 best individuals from the parents and offsprings
 		individuals = [
