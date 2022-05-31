@@ -153,13 +153,17 @@ class MaxCut(FitnessFunction):
 			if len(adjacency_list[v]) == clique_size:
 				# Find the adjacent node that is also an 'inter clique' node.
 				for v_adj in adjacency_list[v]:
-					if len(adjacency_list[v_adj]) == clique_size:
+					if len(adjacency_list[v_adj]) == clique_size and (v_adj, v) not in inter_clique_edges:
+						# Note that the edge between both endpoints of a single clique remains in the list of inter_clique_edges.
 						inter_clique_edges.append((v,v_adj))
 
 		while( len(adjacency_list) > 0 ):
 			clique = []
 			w = None
+
+			# Find a node inside a clique
 			for v in adjacency_list:
+				# A node inside a clique has no inter_clique_edges
 				if( len(adjacency_list[v]) == clique_size - 1 ):
 					w = v
 					break
@@ -169,14 +173,21 @@ class MaxCut(FitnessFunction):
 				break
 			
 			clique.append(w)
+			# Append all adjacent nodes to the clique
 			clique.extend(adjacency_list[w])
 			cliques.append(clique)
 
 			clique_edge = []
 			for v1 in clique:
 				for v2 in clique:
+					# Find all the edges inside the clique
 					if v1 in adjacency_list and v2 in adjacency_list[v1] and (v2, v1) not in clique_edge:
 						clique_edge.append((v1,v2))
+
+					# Remove the edges between the nodes in a clique from the inter_clique_edges
+					if (v1, v2) in inter_clique_edges:
+						inter_clique_edges.remove((v1,v2))
+
 
 			for v in adjacency_list[w]:
 				del adjacency_list[v]
@@ -184,6 +195,50 @@ class MaxCut(FitnessFunction):
 
 			cliques_edges.append(clique_edge)
 
-		return cliques, cliques_edges, inter_clique_edges
+		# Order the cliques in a chain
+
+		# Find to which clique the inter_clique_edges belong
+		boundary_nodes = []
+
+		print('inter_clique_edges: ', inter_clique_edges)
+
+		ordered_cliques_indices = np.zeros(len(cliques), dtype=int)
+		current_edge_index = None
+		for clique_index, clique in enumerate(cliques):
+			print('clique_index:', clique_index)
+			boundary_nodes.append([])
+			for index, edge in enumerate(inter_clique_edges):
+				if edge[0] in clique or edge[1] in clique:
+					print(clique, edge)
+					boundary_nodes[clique_index].append(index)
+
+			# Set first (or last) clique of the chain
+			if len(boundary_nodes[clique_index]) == 1:
+				ordered_cliques_indices[0] = clique_index
+				current_edge_index = boundary_nodes[clique_index][0]
+
+		# Find the next cliques to be added to the chain
+		for i in range(len(ordered_cliques_indices) - 1):
+			# Find another clique that has a boundary node to the current clique
+			for clique_index, boundary_node in enumerate(boundary_nodes):
+				if clique_index == ordered_cliques_indices[i]:
+					continue
+				if len(boundary_node) == 1:
+					continue
+				if boundary_node[0] == current_edge_index:
+					ordered_cliques_indices[i+1] = clique_index
+					current_edge_index = boundary_node[1]
+					break
+				elif boundary_node[1] == current_edge_index:
+					ordered_cliques_indices[i+1] = clique_index
+					current_edge_index = boundary_node[0]
+					break
+
+		# Reorder the cliques into a chain
+		ordered_cliques = [cliques[i] for i in ordered_cliques_indices]
+		print('cliques: ', cliques)
+		print('ordered_cliques: ', ordered_cliques)
+
+		return ordered_cliques, cliques_edges, inter_clique_edges
 
 
