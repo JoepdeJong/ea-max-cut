@@ -1,5 +1,7 @@
 import numpy as np
 import itertools as it
+import copy
+
 
 import Individual
 from Utils import ValueToReachFoundException
@@ -9,11 +11,15 @@ class FitnessFunction:
 		self.dimensionality = 1 
 		self.number_of_evaluations = 0
 		self.value_to_reach = np.inf
+		self.partial_fitness_to_reach = np.inf
 
 	def evaluate( self, individual: Individual ):
 		self.number_of_evaluations += 1
 		if individual.fitness >= self.value_to_reach:
 			raise ValueToReachFoundException(individual)
+
+	def evaluate_partial(self, individual: Individual, clique_number: int):
+		pass
 
 class OneMax(FitnessFunction):
 	def __init__( self, dimensionality ):
@@ -88,7 +94,7 @@ class MaxCut(FitnessFunction):
 				self.adjacency_list[v1].append(v0)
 
 			if(self.clique_size > 0):
-				self.cliques, self.inter_clique_edges = self.get_cliques(self.adjacency_list, self.clique_size)
+				self.cliques, self. clique_edges, self.inter_clique_edges = self.get_cliques(self.adjacency_list, self.clique_size)
 
 			assert( len(self.edge_list) == number_of_edges )
 	
@@ -110,18 +116,38 @@ class MaxCut(FitnessFunction):
 	def evaluate( self, individual: Individual ):
 		result = 0
 		for e in self.edge_list:
-			v0, v1 = e
-			w = self.weights[e]
-			if( individual.genotype[v0] != individual.genotype[v1] ):
-				result += w
+			result += self.evaluate_edge(individual, e)
 
 		individual.fitness = result
 		super().evaluate(individual)
 
+	def evaluate_partial(self, individual: Individual, clique_number: int):
+		result = 0
+		for e in self.clique_edges[clique_number]:
+			result += self.evaluate_edge(individual, e)		
+		individual.fitness = result
+
+		#TODO define partial evaluation weight
+		#TODO find proper value for partial fitness to reach
+		partial_evaluation_weight = 1
+		self.number_of_evaluations += partial_evaluation_weight
+		if individual.fitness >= self.partial_fitness_to_reach:
+			raise ValueToReachFoundException(individual)
+
+	def evaluate_edge(self, individual: Individual, e):
+		v0, v1 = e
+		w = self.weights[e]
+		if( individual.genotype[v0] != individual.genotype[v1] ):
+			return w
+		return 0
+
 	def get_cliques(self, adjacency_list, clique_size):
 		cliques = []
-
+		cliques_edges = []
 		inter_clique_edges = []
+		# copy adjacency_list here cause otherwise the items wil be removed from original adjacency_list
+		adjacency_list = copy.copy(adjacency_list)
+		
 		for v in adjacency_list:
 			# Find nodes with out_degree the same as clique size. (without counting the node itself, this means that this node has an edge to a node outside the clique)
 			if len(adjacency_list[v]) == clique_size:
@@ -146,10 +172,18 @@ class MaxCut(FitnessFunction):
 			clique.extend(adjacency_list[w])
 			cliques.append(clique)
 
+			clique_edge = []
+			for v1 in clique:
+				for v2 in clique:
+					if v1 in adjacency_list and v2 in adjacency_list[v1] and (v2, v1) not in clique_edge:
+						clique_edge.append((v1,v2))
+
 			for v in adjacency_list[w]:
 				del adjacency_list[v]
 			del adjacency_list[w]
 
-		return cliques, inter_clique_edges
+			cliques_edges.append(clique_edge)
+
+		return cliques, cliques_edges, inter_clique_edges
 
 
