@@ -18,6 +18,12 @@ class FitnessFunction:
 			raise ValueToReachFoundException(individual)
 
 	def evaluate_partial(self, individual: Individual, clique_number: int):
+		#TODO define partial evaluation weight
+		#TODO find proper value for partial fitness to reach
+		partial_evaluation_weight = len(self.cliques[clique_number])/len(individual.genotype)
+		self.number_of_evaluations += partial_evaluation_weight
+		if individual.partial_fitness[clique_number] >= self.partial_fitness_to_reach:
+			raise ValueToReachFoundException(individual)
 		pass
 
 class OneMax(FitnessFunction):
@@ -126,13 +132,7 @@ class MaxCut(FitnessFunction):
 			result += self.evaluate_edge(individual, e)
 
 		individual.partial_fitness[clique_number] = result
-
-		#TODO define partial evaluation weight
-		#TODO find proper value for partial fitness to reach
-		partial_evaluation_weight = 1
-		self.number_of_evaluations += partial_evaluation_weight
-		if individual.partial_fitness[clique_number] >= self.partial_fitness_to_reach:
-			raise ValueToReachFoundException(individual)
+		super().evaluate_partial(individual, clique_number)
 
 	def evaluate_edge(self, individual: Individual, e):
 		v0, v1 = e
