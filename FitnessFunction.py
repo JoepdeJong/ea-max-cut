@@ -94,7 +94,7 @@ class MaxCut(FitnessFunction):
 				self.adjacency_list[v1].append(v0)
 
 			if(self.clique_size > 0):
-				self.cliques, self. clique_edges, self.inter_clique_edges = self.get_cliques(self.adjacency_list, self.clique_size)
+				self.cliques, self.clique_edges, self.inter_clique_edges = self.get_cliques(self.adjacency_list, self.clique_size)
 
 			assert( len(self.edge_list) == number_of_edges )
 	
@@ -124,14 +124,15 @@ class MaxCut(FitnessFunction):
 	def evaluate_partial(self, individual: Individual, clique_number: int):
 		result = 0
 		for e in self.clique_edges[clique_number]:
-			result += self.evaluate_edge(individual, e)		
-		individual.fitness = result
+			result += self.evaluate_edge(individual, e)
+
+		individual.partial_fitness[clique_number] = result
 
 		#TODO define partial evaluation weight
 		#TODO find proper value for partial fitness to reach
 		partial_evaluation_weight = 1
 		self.number_of_evaluations += partial_evaluation_weight
-		if individual.fitness >= self.partial_fitness_to_reach:
+		if individual.partial_fitness[clique_number] >= self.partial_fitness_to_reach:
 			raise ValueToReachFoundException(individual)
 
 	def evaluate_edge(self, individual: Individual, e):
