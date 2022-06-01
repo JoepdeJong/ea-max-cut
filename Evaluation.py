@@ -31,6 +31,6 @@ if __name__ == "__main__":
     instances= ["maxcut-instances/setE/n0000020i00.txt", "maxcut-instances/setE/n0000010i00.txt",
                              "maxcut-instances/setE/n0000040i00.txt", "maxcut-instances/setE/n0000080i00.txt",
                              "maxcut-instances/setE/n0000160i00.txt"]
-    population_sizes = [10, 20, 40, 80, 160, 320, 640, 1280, 2560]
+    population_sizes = [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
     crossovers = ["UniformCrossover", "OnePointCrossover"]
     evaluateInstances(instances, crossovers, population_sizes, num_runs=15)
