@@ -7,16 +7,16 @@ if __name__ == "__main__":
 	# crossovers = ["CustomCrossover", "UniformCrossover", "OnePointCrossover"]
 	crossovers = ["CustomCrossover"]
 	for cx in crossovers:
-		inst = "maxcut-instances/setE/n0000020i00.txt"
+		# inst = "maxcut-instances/setE/n0000020i00.txt"
+		inst = "maxcut-instances/setE/n0000040i00.txt"
 		fitness = FitnessFunction.MaxCut(inst, clique_size=5)
-		# inst = "maxcut-instances/setE/n0000040i00.txt"
 		with open("output-{}.txt".format(cx),"w") as f:
-			population_size = 50
+			population_size = 500
 			num_evaluations_list = []
 			num_runs = 50
 			num_success = 0
 			for i in range(num_runs):
-				genetic_algorithm = GeneticAlgorithm(fitness,population_size,variation=cx,evaluation_budget=10000,verbose=False)
+				genetic_algorithm = GeneticAlgorithm(fitness,population_size,variation=cx,evaluation_budget=100000,verbose=False)
 				best_fitness, num_evaluations = genetic_algorithm.run()
 				if best_fitness == fitness.value_to_reach:
 					num_success += 1
