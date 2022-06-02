@@ -42,13 +42,14 @@ def two_point_crossover(individual_a: Individual, individual_b: Individual ):
 
 def custom_crossover( fitness: FitnessFunction, individual_a: Individual, individual_b: Individual ):
 	assert len(individual_a.genotype) == len(individual_b.genotype), "solutions should be equal in size"
-	l = np.zeros(len(individual_a.genotype))
+
 	cliques = individual_a.cliques
 	number_of_cliques = len(cliques)
 
+	# Create two offsprings using uniform crossover
 	offspring_a, offspring_b = uniform_crossover(individual_a, individual_b, p=0.5, number_of_cliques=number_of_cliques)
 
-	# Loop over all the cliques:
+	# Evaluate the offsprings on the cliques and compare their fitness
 	for clique_number, clique in enumerate(cliques):
 		# Perform crossover inside the clique to generate the offsprings
 
@@ -73,7 +74,6 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 	# We want to maximize the cut between the cliques.
 	# The cliques are already ordered in a chain, 
 	# so we can just make a cut between every clique.
-
 	last_clique_node = None
 	for clique_number, clique in enumerate(cliques):
 		if clique_number == 0:
@@ -102,6 +102,5 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 	# Compute fitness of the offsprings:
 	fitness.evaluate(individual_a)
 	fitness.evaluate(individual_b)
-
 
 	return [individual_a, individual_b]
