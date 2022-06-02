@@ -198,7 +198,7 @@ class MaxCut(FitnessFunction):
 		# Order the cliques in a chain
 
 		# Find to which clique the inter_clique_edges belong
-		boundary_nodes = []
+		boundary_edges = []
 
 		print('inter_clique_edges: ', inter_clique_edges)
 
@@ -206,39 +206,70 @@ class MaxCut(FitnessFunction):
 		current_edge_index = None
 		for clique_index, clique in enumerate(cliques):
 			print('clique_index:', clique_index)
-			boundary_nodes.append([])
+			boundary_edges.append([])
 			for index, edge in enumerate(inter_clique_edges):
 				if edge[0] in clique or edge[1] in clique:
 					print(clique, edge)
-					boundary_nodes[clique_index].append(index)
+					boundary_edges[clique_index].append(index)
 
 			# Set first (or last) clique of the chain
-			if len(boundary_nodes[clique_index]) == 1:
+			if len(boundary_edges[clique_index]) == 1:
 				ordered_cliques_indices[0] = clique_index
-				current_edge_index = boundary_nodes[clique_index][0]
+				current_edge_index = boundary_edges[clique_index][0]
 
 		# Find the next cliques to be added to the chain
 		for i in range(len(ordered_cliques_indices) - 1):
 			# Find another clique that has a boundary node to the current clique
-			for clique_index, boundary_node in enumerate(boundary_nodes):
+			for clique_index, boundary_edge in enumerate(boundary_edges):
 				if clique_index == ordered_cliques_indices[i]:
 					continue
-				if len(boundary_node) == 1:
+				if len(boundary_edge) == 1:
 					continue
-				if boundary_node[0] == current_edge_index:
+				if boundary_edge[0] == current_edge_index:
 					ordered_cliques_indices[i+1] = clique_index
-					current_edge_index = boundary_node[1]
+					current_edge_index = boundary_edge[1]
 					break
-				elif boundary_node[1] == current_edge_index:
+				elif boundary_edge[1] == current_edge_index:
 					ordered_cliques_indices[i+1] = clique_index
-					current_edge_index = boundary_node[0]
+					current_edge_index = boundary_edge[0]
 					break
 
 		# Reorder the cliques into a chain
 		ordered_cliques = [cliques[i] for i in ordered_cliques_indices]
-		print('cliques: ', cliques)
-		print('ordered_cliques: ', ordered_cliques)
+
+		self.ordered_boundary_edges = [boundary_edges[i] for i in ordered_cliques_indices]
+
+		# Ensure that the nodes to an inter_clique_edge are at the beginning or end of the clique
+		processed_edges = []
+		for i in range(len(ordered_cliques)):
+			clique = ordered_cliques[i]
+
+
+			boundary_edge_indices = self.ordered_boundary_edges[i]
+			boundary_edges = [inter_clique_edges[i] for i in boundary_edge_indices]
+		
+			for edge in boundary_edges:
+				# print(edge, clique)
+				if edge in processed_edges:
+					continue
+				if edge[0] in clique:
+					ordered_cliques[i].remove(edge[0])
+					ordered_cliques[i].insert(0, edge[0])
+					ordered_cliques[i+1].remove(edge[1])
+					ordered_cliques[i+1].insert(0, edge[1])
+				if edge[1] in clique:
+					ordered_cliques[i].remove(edge[1])
+					ordered_cliques[i].append(edge[1])
+					ordered_cliques[i+1].remove(edge[0])
+					ordered_cliques[i+1].insert(0, edge[0])
+				processed_edges.append(edge)
+
+		# print('cliques: ', cliques)
+		# print('ordered_cliques: ', ordered_cliques)
+		# print('ordered_boundary_edges: ', self.ordered_boundary_edges)
 
 		return ordered_cliques, cliques_edges, inter_clique_edges
 
 
+
+#  [[*, *, *, *, 37], [13, *, *, *, 9], [2, *, *, *, 25], [32, *, *, *, 17], [16, *, *, *, 10], [19, *, *, *, 28], [0, *, *, *, 23], [15, *, *, *, *]]
