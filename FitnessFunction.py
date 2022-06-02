@@ -26,6 +26,9 @@ class FitnessFunction:
 			raise ValueToReachFoundException(individual)
 		pass
 
+	def reset(self):
+		self.number_of_evaluations = 0
+
 class OneMax(FitnessFunction):
 	def __init__( self, dimensionality ):
 		super().__init__()
@@ -263,10 +266,6 @@ class MaxCut(FitnessFunction):
 					ordered_cliques[i+1].remove(edge[0])
 					ordered_cliques[i+1].insert(0, edge[0])
 				processed_edges.append(edge)
-
-		# print('cliques: ', cliques)
-		# print('ordered_cliques: ', ordered_cliques)
-		# print('ordered_boundary_edges: ', self.ordered_boundary_edges)
 
 		return ordered_cliques, cliques_edges, inter_clique_edges
 
