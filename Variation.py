@@ -46,6 +46,7 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 	cliques = individual_a.cliques
 	number_of_cliques = len(cliques)
 
+	computed_fitness = [0,0]
 	# Create two offsprings using uniform crossover
 	offspring_a, offspring_b = uniform_crossover(individual_a, individual_b, p=0.5, number_of_cliques=number_of_cliques)
 
@@ -58,8 +59,9 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 		# Compute fitness of the offsprings on the clique:
 		fitness.evaluate_partial(offspring_a, clique_number)
 		fitness.evaluate_partial(offspring_b, clique_number)
+		
 
-		# Find the 2 best individuals from the parents and offsprings on the current clique
+		# # Find the 2 best individuals from the parents and offsprings on the current clique
 		individuals = [
 			individual_a, individual_b,
 			offspring_a, offspring_b
@@ -67,11 +69,14 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 
 		sorted_individuals = sorted(individuals, key=lambda x: x.partial_fitness[clique_number], reverse=True)
 
-		# Use the genotype of the best two individuals to update the genotype of the clique
+		# # Use the genotype of the best two individuals to update the genotype of the clique
 		individual_a.genotype[clique] = sorted_individuals[0].genotype[clique]
 		individual_a.partial_fitness[clique_number] = sorted_individuals[0].partial_fitness[clique_number]
 		individual_b.genotype[clique] = sorted_individuals[1].genotype[clique]
 		individual_b.partial_fitness[clique_number] = sorted_individuals[1].partial_fitness[clique_number]
+
+		computed_fitness[0] += individual_a.partial_fitness[clique_number]
+		computed_fitness[1] += individual_b.partial_fitness[clique_number]
 
 		## Make cuts between cliques
 		if clique_number == 0:
@@ -88,13 +93,30 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 		
 		last_clique_node = clique[-1]
 
+	inter_clique_fitness = np.zeros(2)
 	# Validate inter clique cut
 	for edge in fitness.inter_clique_edges:
+		inter_clique_fitness[0] += fitness.weights[edge]
+		inter_clique_fitness[1] += fitness.weights[edge]
+		print(inter_clique_fitness)
 		assert(individual_a.genotype[edge[0]] != individual_a.genotype[edge[1]])
 		assert(individual_b.genotype[edge[0]] != individual_b.genotype[edge[1]])
+
 
 	# Compute fitness of the offsprings:
 	fitness.evaluate(individual_a)
 	fitness.evaluate(individual_b)
+
+	print('Before recomputing', np.sum(individual_a.partial_fitness), inter_clique_fitness[0])
+	for clique_number, clique in enumerate(cliques):
+		fitness.evaluate_partial(individual_a, clique_number)
+
+	print('After recomputing', np.sum(individual_a.partial_fitness), inter_clique_fitness[0])
+
+
+	print("Computed fitness:", computed_fitness, inter_clique_fitness)
+	print("Fitness:", individual_a.fitness, individual_b.fitness)
+	assert(individual_a.fitness == computed_fitness[0] + inter_clique_fitness[0])
+	assert(individual_b.fitness == computed_fitness[1] + inter_clique_fitness[1])
 
 	return [individual_a, individual_b]
