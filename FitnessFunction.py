@@ -18,7 +18,6 @@ class FitnessFunction:
 			raise ValueToReachFoundException(individual)
 
 	def evaluate_partial(self, individual: Individual, clique_number: int):
-		#TODO define partial evaluation weight
 		#TODO find proper value for partial fitness to reach
 		partial_evaluation_weight = len(self.cliques[clique_number])/len(individual.genotype)
 		self.number_of_evaluations += partial_evaluation_weight
