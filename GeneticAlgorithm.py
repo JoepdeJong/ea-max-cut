@@ -1,5 +1,4 @@
 import numpy as np
-import time
 from functools import partial 
 
 import Variation
@@ -42,6 +41,12 @@ class GeneticAlgorithm:
 			individual.cliques = self.fitness.cliques
 			self.fitness.evaluate(individual)
 
+			
+			# Compute the fitness of every clique in the individual
+			individual.partial_fitness = np.zeros(len(individual.cliques))
+			for clique_number, clique in enumerate(individual.cliques):
+				self.fitness.evaluate_partial(individual, clique_number)
+
 	def make_offspring( self ):
 		offspring = []
 		order = np.random.permutation(self.population_size)
@@ -49,6 +54,11 @@ class GeneticAlgorithm:
 			offspring = offspring + self.variation_operator(self.population[order[2*i]],self.population[order[2*i+1]])
 		for individual in offspring:
 			self.fitness.evaluate(individual)
+
+			# Compute the fitness of every clique in the individual
+			individual.partial_fitness = np.zeros(len(individual.cliques))
+			for clique_number, clique in enumerate(individual.cliques):
+				self.fitness.evaluate_partial(individual, clique_number)
 		return offspring
 
 	def make_selection( self, offspring ):

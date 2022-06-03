@@ -3,11 +3,11 @@ import numpy as np
 from Individual import Individual
 from FitnessFunction import FitnessFunction
 
-def uniform_crossover(individual_a: Individual, individual_b: Individual, p = 0.5, clique = [] ):
+def uniform_crossover(individual_a: Individual, individual_b: Individual, p = 0.5, number_of_cliques = None):
 	assert len(individual_a.genotype) == len(individual_b.genotype), "solutions should be equal in size"
 	l = len(individual_a.genotype)
-	offspring_a = Individual(l)
-	offspring_b = Individual(l)
+	offspring_a = Individual(l, number_of_cliques)
+	offspring_b = Individual(l, number_of_cliques)
     
 	m = np.random.choice((0,1), p=(p, 1-p), size=l)
 	offspring_a.genotype = np.where(m, individual_a.genotype, individual_b.genotype)
@@ -42,74 +42,59 @@ def two_point_crossover(individual_a: Individual, individual_b: Individual ):
 
 def custom_crossover( fitness: FitnessFunction, individual_a: Individual, individual_b: Individual ):
 	assert len(individual_a.genotype) == len(individual_b.genotype), "solutions should be equal in size"
-	l = np.zeros(len(individual_a.genotype))
-	offspring_a = Individual(l)
-	offspring_b = Individual(l)
-	offspring_a.cliques = individual_a.cliques
-	offspring_b.cliques = individual_b.cliques
 
-	# Loop over all the cliques:
-	for clique in individual_a.cliques:
+	cliques = individual_a.cliques
+	number_of_cliques = len(cliques)
 
-		# Create parents inside the clique:
-		parent_a_c = Individual(l)
-		parent_b_c = Individual(l)
+	# Create two offsprings using uniform crossover
+	offspring_a, offspring_b = uniform_crossover(individual_a, individual_b, p=0.5, number_of_cliques=number_of_cliques)
 
-		parent_a_c.genotype[clique] = individual_a.genotype[clique]
-		parent_b_c.genotype[clique] = individual_b.genotype[clique]
+	# Evaluate the offsprings on the cliques and compare their fitness
 
-		# Compute fitness of the parents:
-		fitness.evaluate(parent_a_c)
-		fitness.evaluate(parent_b_c)
+	# We also want to maximize the cut between the cliques. The cliques are ordered in a chain so we keep track of the last node to make the cut.
+	last_clique_node = None
 
-		# Perform crossover inside the clique to generate the offsprings
-		offspring_a_c, offspring_b_c = uniform_crossover(parent_a_c, parent_b_c)
+	for clique_number, clique in enumerate(cliques):
+		# Compute fitness of the offsprings on the clique:
+		fitness.evaluate_partial(offspring_a, clique_number)
+		fitness.evaluate_partial(offspring_b, clique_number)
 
-		# Compute fitness of the offsprings:
-		fitness.evaluate(offspring_a_c)
-		fitness.evaluate(offspring_b_c)
-
-		# Find the 2 best individuals from the parents and offsprings
+		# Find the 2 best individuals from the parents and offsprings on the current clique
 		individuals = [
-			parent_a_c, parent_b_c,
-			offspring_a_c, offspring_b_c
+			individual_a, individual_b,
+			offspring_a, offspring_b
 		]
 
-		sorted_individuals = sorted(individuals, key=lambda x: x.fitness, reverse=True)
+		sorted_individuals = sorted(individuals, key=lambda x: x.partial_fitness[clique_number], reverse=True)
 
-		# Use the genotype of the best two individuals
-		offspring_a.genotype[clique] = sorted_individuals[0].genotype[clique]
-		offspring_b.genotype[clique] = sorted_individuals[1].genotype[clique]
+		# Use the genotype of the best two individuals to update the genotype of the clique
+		individual_a.genotype[clique] = sorted_individuals[0].genotype[clique]
+		individual_a.partial_fitness[clique_number] = sorted_individuals[0].partial_fitness[clique_number]
+		individual_b.genotype[clique] = sorted_individuals[1].genotype[clique]
+		individual_b.partial_fitness[clique_number] = sorted_individuals[1].partial_fitness[clique_number]
 
+		## Make cuts between cliques
+		if clique_number == 0:
+			# Set the node in the clique that has an edge to the next clique
+			last_clique_node = clique[-1]
+			continue
+		
+		# Make a cut between the last clique and the current clique if the value of the nodes that connect them is the same
+		if individual_a.genotype[last_clique_node] == individual_a.genotype[clique[0]]:
+			individual_a.genotype[clique] = 1 - individual_a.genotype[clique]
 
-	# TODO: one-points crossover between cliques
-	# For this, we have to know the order of the cliques in the chain, since we want to crossover between cliques and crossover all the cliques after the crossover point.
-	
-	# Pick a random clique
-	clique_a = np.random.randint(len(individual_a.cliques))
-	clique_b = np.random.randint(len(individual_b.cliques))
-	offspring_a2 = Individual(l)
-	offspring_b2 = Individual(l)
-	offspring_a2.genotype = individual_a.genotype
-	offspring_b2.genotype = individual_b.genotype
-	offspring_a2.cliques = individual_a.cliques
-	offspring_b2.cliques = individual_b.cliques
+		if individual_b.genotype[last_clique_node] == individual_b.genotype[clique[0]]:
+			individual_b.genotype[clique] = 1 - individual_b.genotype[clique]
+		
+		last_clique_node = clique[-1]
 
-	offspring_a2.genotype[individual_a.cliques[clique_a]] = 1 - individual_a.genotype[individual_a.cliques[clique_a]]
-	offspring_b2.genotype[individual_b.cliques[clique_b]] = 1 - individual_b.genotype[individual_b.cliques[clique_b]]
+	# Validate inter clique cut
+	for edge in fitness.inter_clique_edges:
+		assert(individual_a.genotype[edge[0]] != individual_a.genotype[edge[1]])
+		assert(individual_b.genotype[edge[0]] != individual_b.genotype[edge[1]])
 
 	# Compute fitness of the offsprings:
-	fitness.evaluate(offspring_a)
-	fitness.evaluate(offspring_b)
-	fitness.evaluate(offspring_a2)
-	fitness.evaluate(offspring_b2)
+	fitness.evaluate(individual_a)
+	fitness.evaluate(individual_b)
 
-	individuals = [
-		offspring_a, offspring_b,
-		offspring_a2, offspring_b2
-	]
-	sorted_individuals = sorted(individuals, key=lambda x: x.fitness, reverse=True)
-		
-
-	return [sorted_individuals[0], sorted_individuals[1]]
-
+	return [individual_a, individual_b]
