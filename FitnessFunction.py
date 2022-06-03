@@ -139,9 +139,8 @@ class MaxCut(FitnessFunction):
 
 	def evaluate_edge(self, individual: Individual, e):
 		v0, v1 = e
-		w = self.weights[e]
 		if( individual.genotype[v0] != individual.genotype[v1] ):
-			return w
+			return self.weights[e]
 		return 0
 
 	def get_cliques(self, adjacency_list, clique_size):
