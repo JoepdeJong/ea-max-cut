@@ -50,14 +50,16 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 	offspring_a, offspring_b = uniform_crossover(individual_a, individual_b, p=0.5, number_of_cliques=number_of_cliques)
 
 	# Evaluate the offsprings on the cliques and compare their fitness
-	for clique_number, clique in enumerate(cliques):
-		# Perform crossover inside the clique to generate the offsprings
 
-		# Compute fitness of the offsprings:
+	# We also want to maximize the cut between the cliques. The cliques are ordered in a chain so we keep track of the last node to make the cut.
+	last_clique_node = None
+
+	for clique_number, clique in enumerate(cliques):
+		# Compute fitness of the offsprings on the clique:
 		fitness.evaluate_partial(offspring_a, clique_number)
 		fitness.evaluate_partial(offspring_b, clique_number)
 
-		# Find the 2 best individuals from the parents and offsprings
+		# Find the 2 best individuals from the parents and offsprings on the current clique
 		individuals = [
 			individual_a, individual_b,
 			offspring_a, offspring_b
@@ -65,31 +67,23 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 
 		sorted_individuals = sorted(individuals, key=lambda x: x.partial_fitness[clique_number], reverse=True)
 
-		# Use the genotype of the best two individuals
+		# Use the genotype of the best two individuals to update the genotype of the clique
 		individual_a.genotype[clique] = sorted_individuals[0].genotype[clique]
 		individual_a.partial_fitness[clique_number] = sorted_individuals[0].partial_fitness[clique_number]
 		individual_b.genotype[clique] = sorted_individuals[1].genotype[clique]
 		individual_b.partial_fitness[clique_number] = sorted_individuals[1].partial_fitness[clique_number]
 
-	# We want to maximize the cut between the cliques.
-	# The cliques are already ordered in a chain, 
-	# so we can just make a cut between every clique.
-	last_clique_node = None
-	for clique_number, clique in enumerate(cliques):
+		## Make cuts between cliques
 		if clique_number == 0:
 			# Set the node in the clique that has an edge to the next clique
 			last_clique_node = clique[-1]
 			continue
 		
-		last_clique_node = cliques[clique_number-1][-1]
-		
 		# Make a cut between the last clique and the current clique if the value of the nodes that connect them is the same
-		do_crossover_a = individual_a.genotype[last_clique_node] == individual_a.genotype[clique[0]]
-		do_crossover_b = individual_b.genotype[last_clique_node] == individual_b.genotype[clique[0]]
-
-		if do_crossover_a:
+		if individual_a.genotype[last_clique_node] == individual_a.genotype[clique[0]]:
 			individual_a.genotype[clique] = 1 - individual_a.genotype[clique]
-		if do_crossover_b:
+
+		if individual_b.genotype[last_clique_node] == individual_b.genotype[clique[0]]:
 			individual_b.genotype[clique] = 1 - individual_b.genotype[clique]
 		
 		last_clique_node = clique[-1]
