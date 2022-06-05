@@ -19,7 +19,8 @@ class FitnessFunction:
 
 	def evaluate_partial(self, individual: Individual, clique_number: int):
 		#TODO find proper value for partial fitness to reach
-		partial_evaluation_weight = len(self.cliques[clique_number])/len(individual.genotype)
+		# partial_evaluation_weight = len(self.cliques[clique_number])/len(individual.genotype)
+		partial_evaluation_weight = len(self.clique_edges[clique_number])/len(self.edge_list)
 		self.number_of_evaluations += partial_evaluation_weight
 		if individual.partial_fitness[clique_number] >= self.partial_fitness_to_reach:
 			raise ValueToReachFoundException(individual)
@@ -138,9 +139,8 @@ class MaxCut(FitnessFunction):
 
 	def evaluate_edge(self, individual: Individual, e):
 		v0, v1 = e
-		w = self.weights[e]
 		if( individual.genotype[v0] != individual.genotype[v1] ):
-			return w
+			return self.weights[e]
 		return 0
 
 	def get_cliques(self, adjacency_list, clique_size):
@@ -240,6 +240,7 @@ class MaxCut(FitnessFunction):
 		ordered_cliques = [cliques[i] for i in ordered_cliques_indices]
 
 		self.ordered_boundary_edges = [boundary_edges[i] for i in ordered_cliques_indices]
+		ordered_clique_edges = [cliques_edges[i] for i in ordered_cliques_indices]
 
 		# Ensure that the nodes to an inter_clique_edge are at the beginning or end of the clique
 		processed_edges = []
@@ -266,7 +267,7 @@ class MaxCut(FitnessFunction):
 					ordered_cliques[i+1].insert(0, edge[0])
 				processed_edges.append(edge)
 
-		return ordered_cliques, cliques_edges, inter_clique_edges
+		return ordered_cliques, ordered_clique_edges, inter_clique_edges
 
 
 
