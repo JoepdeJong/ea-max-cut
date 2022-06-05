@@ -47,7 +47,7 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 	##
 	assert len(individual_a.genotype) == len(individual_b.genotype), "solutions should be equal in size"
 
-	cliques = copy.copy(individual_a.cliques)
+	cliques = individual_a.cliques
 	number_of_cliques = len(cliques)
 
 	if testing:
@@ -65,12 +65,16 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 		
 
 		# # Find the 2 best individuals from the parents and offsprings on the current clique
-		individuals = copy.deepcopy([
-			individual_a, individual_b,
-			offspring_a, offspring_b
-		])
+		# individuals = [individual_a, individual_b,
+		# offspring_a, offspring_b]
 
 		# Fitnesses
+		genotypes = [
+			individual_a.genotype[clique],
+			individual_b.genotype[clique],
+			offspring_a.genotype[clique],
+			offspring_b.genotype[clique]
+		]
 		fitnesses = np.array([
 			individual_a.partial_fitness[clique_number],
 			individual_b.partial_fitness[clique_number],
@@ -82,18 +86,18 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 		sorted_fitness_indices = np.argsort(fitnesses)[::-1]
 
 		# # Use the genotype of the best two individuals to update the genotype of the clique
-		individual_a.genotype[clique] = individuals[sorted_fitness_indices[0]].genotype[clique]
-		individual_a.partial_fitness[clique_number] = individuals[sorted_fitness_indices[0]].partial_fitness[clique_number]
+		individual_a.genotype[clique] = genotypes[sorted_fitness_indices[0]]
+		individual_a.partial_fitness[clique_number] = fitnesses[sorted_fitness_indices[0]]
 
-		individual_b.genotype[clique] = individuals[sorted_fitness_indices[1]].genotype[clique]
-		individual_b.partial_fitness[clique_number] = individuals[sorted_fitness_indices[1]].partial_fitness[clique_number]
+		individual_b.genotype[clique] = genotypes[sorted_fitness_indices[1]]
+		individual_b.partial_fitness[clique_number] = fitnesses[sorted_fitness_indices[1]]
 		
 		## Testing
 		if testing:
-			np.testing.assert_array_equal(individual_a.genotype[clique], individuals[sorted_fitness_indices[0]].genotype[clique])
-			np.testing.assert_array_equal(individual_b.genotype[clique], individuals[sorted_fitness_indices[1]].genotype[clique])
-			np.testing.assert_array_equal(individual_a.partial_fitness[clique_number], individuals[sorted_fitness_indices[0]].partial_fitness[clique_number])
-			np.testing.assert_array_equal(individual_b.partial_fitness[clique_number], individuals[sorted_fitness_indices[1]].partial_fitness[clique_number])
+			np.testing.assert_array_equal(individual_a.genotype[clique], genotypes[sorted_fitness_indices[0]])
+			np.testing.assert_array_equal(individual_b.genotype[clique], genotypes[sorted_fitness_indices[1]])
+			np.testing.assert_array_equal(individual_a.partial_fitness[clique_number], fitnesses[sorted_fitness_indices[0]])
+			np.testing.assert_array_equal(individual_b.partial_fitness[clique_number], fitnesses[sorted_fitness_indices[1]])
 
 			computed_fitness[0, clique_number] = individual_a.partial_fitness[clique_number]
 			computed_fitness[1, clique_number] = individual_b.partial_fitness[clique_number]
