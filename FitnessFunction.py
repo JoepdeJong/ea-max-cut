@@ -240,6 +240,7 @@ class MaxCut(FitnessFunction):
 		ordered_cliques = [cliques[i] for i in ordered_cliques_indices]
 
 		self.ordered_boundary_edges = [boundary_edges[i] for i in ordered_cliques_indices]
+		ordered_clique_edges = [cliques_edges[i] for i in ordered_cliques_indices]
 
 		# Ensure that the nodes to an inter_clique_edge are at the beginning or end of the clique
 		processed_edges = []
@@ -266,7 +267,7 @@ class MaxCut(FitnessFunction):
 					ordered_cliques[i+1].insert(0, edge[0])
 				processed_edges.append(edge)
 
-		return ordered_cliques, cliques_edges, inter_clique_edges
+		return ordered_cliques, ordered_clique_edges, inter_clique_edges
 
 
 
