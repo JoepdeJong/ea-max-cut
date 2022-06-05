@@ -18,6 +18,7 @@ class GeneticAlgorithm:
 		self.number_of_generations = 0
 		self.verbose = False
 		self.print_final_results = True 
+		self.options = options
 
 		if "verbose" in options:
 			self.verbose = options["verbose"]
@@ -38,14 +39,15 @@ class GeneticAlgorithm:
 	def initialize_population( self ):
 		self.population = [Individual.initialize_uniform_at_random(self.fitness.dimensionality) for i in range(self.population_size)]
 		for individual in self.population:
-			# individual.cliques = self.fitness.cliques
+			if self.options["variation"] == "CustomCrossover":
+				individual.cliques = self.fitness.cliques
 			self.fitness.evaluate(individual)
-
-			
-			# Compute the fitness of every clique in the individual
-			individual.partial_fitness = np.zeros(len(individual.cliques))
-			for clique_number, clique in enumerate(individual.cliques):
-				self.fitness.evaluate_partial(individual, clique_number)
+	
+			if self.options["variation"] == "CustomCrossover":
+				# Compute the fitness of every clique in the individual
+				individual.partial_fitness = np.zeros(len(individual.cliques))
+				for clique_number, clique in enumerate(individual.cliques):
+					self.fitness.evaluate_partial(individual, clique_number)
 
 	def make_offspring( self ):
 		offspring = []
@@ -55,10 +57,11 @@ class GeneticAlgorithm:
 		for individual in offspring:
 			self.fitness.evaluate(individual)
 
-			# Compute the fitness of every clique in the individual
-			individual.partial_fitness = np.zeros(len(individual.cliques))
-			for clique_number, clique in enumerate(individual.cliques):
-				self.fitness.evaluate_partial(individual, clique_number)
+			if self.variation_operator == Variation.custom_crossover:
+				# Compute the fitness of every clique in the individual
+				individual.partial_fitness = np.zeros(len(individual.cliques))
+				for clique_number, clique in enumerate(individual.cliques):
+					self.fitness.evaluate_partial(individual, clique_number)
 		return offspring
 
 	def make_selection( self, offspring ):
