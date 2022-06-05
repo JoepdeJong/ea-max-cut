@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 
 from Individual import Individual
@@ -41,20 +42,22 @@ def two_point_crossover(individual_a: Individual, individual_b: Individual ):
 	return [offspring_a, offspring_b]
 
 def custom_crossover( fitness: FitnessFunction, individual_a: Individual, individual_b: Individual ):
+	## Configure testing
+	testing = False
+	##
 	assert len(individual_a.genotype) == len(individual_b.genotype), "solutions should be equal in size"
 
-	cliques = individual_a.cliques
+	cliques = copy.copy(individual_a.cliques)
 	number_of_cliques = len(cliques)
 
-	computed_fitness = [0,0]
+	if testing:
+		# Store the sum of the partial fitnesses, to check if it is correct
+		computed_fitness = np.zeros((2, number_of_cliques))
 	# Create two offsprings using uniform crossover
 	offspring_a, offspring_b = uniform_crossover(individual_a, individual_b, p=0.5, number_of_cliques=number_of_cliques)
 
 	# Evaluate the offsprings on the cliques and compare their fitness
-
 	# We also want to maximize the cut between the cliques. The cliques are ordered in a chain so we keep track of the last node to make the cut.
-	last_clique_node = None
-
 	for clique_number, clique in enumerate(cliques):
 		# Compute fitness of the offsprings on the clique:
 		fitness.evaluate_partial(offspring_a, clique_number)
@@ -62,61 +65,101 @@ def custom_crossover( fitness: FitnessFunction, individual_a: Individual, indivi
 		
 
 		# # Find the 2 best individuals from the parents and offsprings on the current clique
-		individuals = [
+		individuals = copy.deepcopy([
 			individual_a, individual_b,
 			offspring_a, offspring_b
-		]
+		])
 
-		sorted_individuals = sorted(individuals, key=lambda x: x.partial_fitness[clique_number], reverse=True)
+		# Fitnesses
+		fitnesses = np.array([
+			individual_a.partial_fitness[clique_number],
+			individual_b.partial_fitness[clique_number],
+			offspring_a.partial_fitness[clique_number],
+			offspring_b.partial_fitness[clique_number]
+		])
+
+		# Get the indices of the sorted fitnesses
+		sorted_fitness_indices = np.argsort(fitnesses)[::-1]
 
 		# # Use the genotype of the best two individuals to update the genotype of the clique
-		individual_a.genotype[clique] = sorted_individuals[0].genotype[clique]
-		individual_a.partial_fitness[clique_number] = sorted_individuals[0].partial_fitness[clique_number]
-		individual_b.genotype[clique] = sorted_individuals[1].genotype[clique]
-		individual_b.partial_fitness[clique_number] = sorted_individuals[1].partial_fitness[clique_number]
+		individual_a.genotype[clique] = individuals[sorted_fitness_indices[0]].genotype[clique]
+		individual_a.partial_fitness[clique_number] = individuals[sorted_fitness_indices[0]].partial_fitness[clique_number]
 
-		computed_fitness[0] += individual_a.partial_fitness[clique_number]
-		computed_fitness[1] += individual_b.partial_fitness[clique_number]
-
-		## Make cuts between cliques
-		if clique_number == 0:
-			# Set the node in the clique that has an edge to the next clique
-			last_clique_node = clique[-1]
-			continue
+		individual_b.genotype[clique] = individuals[sorted_fitness_indices[1]].genotype[clique]
+		individual_b.partial_fitness[clique_number] = individuals[sorted_fitness_indices[1]].partial_fitness[clique_number]
 		
-		# Make a cut between the last clique and the current clique if the value of the nodes that connect them is the same
-		if individual_a.genotype[last_clique_node] == individual_a.genotype[clique[0]]:
-			individual_a.genotype[clique] = 1 - individual_a.genotype[clique]
+		## Testing
+		if testing:
+			np.testing.assert_array_equal(individual_a.genotype[clique], individuals[sorted_fitness_indices[0]].genotype[clique])
+			np.testing.assert_array_equal(individual_b.genotype[clique], individuals[sorted_fitness_indices[1]].genotype[clique])
+			np.testing.assert_array_equal(individual_a.partial_fitness[clique_number], individuals[sorted_fitness_indices[0]].partial_fitness[clique_number])
+			np.testing.assert_array_equal(individual_b.partial_fitness[clique_number], individuals[sorted_fitness_indices[1]].partial_fitness[clique_number])
 
-		if individual_b.genotype[last_clique_node] == individual_b.genotype[clique[0]]:
-			individual_b.genotype[clique] = 1 - individual_b.genotype[clique]
+			computed_fitness[0, clique_number] = individual_a.partial_fitness[clique_number]
+			computed_fitness[1, clique_number] = individual_b.partial_fitness[clique_number]
+
+			print(individual_a.genotype[clique], individual_a.partial_fitness[clique_number], clique)
+			fitness.evaluate_partial(individual_a, clique_number)
+			print(individual_a.genotype[clique], individual_a.partial_fitness[clique_number], clique)
+			assert(individual_a.partial_fitness[clique_number] == computed_fitness[0, clique_number])
+
+		# Make cuts between cliques
+		if clique_number != 0:
+			# Make a cut between the last clique and the current clique if the value of the nodes that connect them is the same
+			if individual_a.genotype[last_clique_node] == individual_a.genotype[clique[0]]:
+				individual_a.genotype[clique] = 1 - individual_a.genotype[clique]
+
+			if individual_b.genotype[last_clique_node] == individual_b.genotype[clique[0]]:
+				individual_b.genotype[clique] = 1 - individual_b.genotype[clique]
+
+			if testing:
+				fitness.evaluate_partial(individual_a, clique_number)
+				assert(individual_a.partial_fitness[clique_number] == computed_fitness[0, clique_number])
+				fitness.evaluate_partial(individual_b, clique_number)
+				assert(individual_b.partial_fitness[clique_number] == computed_fitness[1, clique_number])
 		
+		# Set the node in the clique that has an edge to the next clique
 		last_clique_node = clique[-1]
 
 	inter_clique_fitness = np.zeros(2)
-	# Validate inter clique cut
+	
 	for edge in fitness.inter_clique_edges:
 		inter_clique_fitness[0] += fitness.weights[edge]
 		inter_clique_fitness[1] += fitness.weights[edge]
-		print(inter_clique_fitness)
-		assert(individual_a.genotype[edge[0]] != individual_a.genotype[edge[1]])
-		assert(individual_b.genotype[edge[0]] != individual_b.genotype[edge[1]])
+		
+		if testing:
+			# Validate inter clique cut
+			assert(individual_a.genotype[edge[0]] != individual_a.genotype[edge[1]])
+			assert(individual_b.genotype[edge[0]] != individual_b.genotype[edge[1]])
+
+	if testing:
+		# Compute fitness of the offsprings:
+		fitness.evaluate(individual_a)
+		fitness.evaluate(individual_b)
+
+		print('A', 'p', individual_a.partial_fitness)
+		# print(individual_a.genotype)
+		print('Before recomputing', np.sum(individual_a.partial_fitness), inter_clique_fitness[0])
+		for clique_number, clique in enumerate(cliques):
+			fitness.evaluate_partial(individual_a, clique_number)
+			fitness.evaluate_partial(individual_b, clique_number)
+			if clique_number == 7:
+				print('A', clique_number, individual_a.partial_fitness, individual_a.genotype[clique])
+		# print(individual_a.genotype)
+		print('A', 'p', individual_a.partial_fitness)
+		print('After recomputing', np.sum(individual_a.partial_fitness), inter_clique_fitness[0])
 
 
-	# Compute fitness of the offsprings:
-	fitness.evaluate(individual_a)
-	fitness.evaluate(individual_b)
-
-	print('Before recomputing', np.sum(individual_a.partial_fitness), inter_clique_fitness[0])
-	for clique_number, clique in enumerate(cliques):
-		fitness.evaluate_partial(individual_a, clique_number)
-
-	print('After recomputing', np.sum(individual_a.partial_fitness), inter_clique_fitness[0])
+		print("Computed fitness:", np.sum(computed_fitness, 1), inter_clique_fitness)
+		print("Fitness:", individual_a.fitness, individual_b.fitness)
+		assert(individual_a.fitness == np.sum(computed_fitness[0,:]) + inter_clique_fitness[0])
+		assert(individual_b.fitness == np.sum(computed_fitness[1,:]) + inter_clique_fitness[1])
 
 
-	print("Computed fitness:", computed_fitness, inter_clique_fitness)
-	print("Fitness:", individual_a.fitness, individual_b.fitness)
-	assert(individual_a.fitness == computed_fitness[0] + inter_clique_fitness[0])
-	assert(individual_b.fitness == computed_fitness[1] + inter_clique_fitness[1])
+		assert(individual_a.fitness == np.sum(individual_a.partial_fitness) + inter_clique_fitness[0])
+		assert(individual_b.fitness == np.sum(individual_b.partial_fitness) + inter_clique_fitness[1])
+	
+	individual_a.fitness = np.sum(individual_a.partial_fitness) + inter_clique_fitness[0]
+	individual_b.fitness = np.sum(individual_a.partial_fitness) + inter_clique_fitness[1]
 
 	return [individual_a, individual_b]
