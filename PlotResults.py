@@ -9,7 +9,7 @@ sns.set_palette(sns.color_palette("Set2"))
 
 def make_suc_perc_plot(df):
     res = sns.relplot(data= df, x='pop-size', y='succes-percentage',
-                col='instance',hue='crossover-operator',
+                col='instance', col_order = ['n0000010i00', 'n0000020i00', 'n0000040i00', 'n0000080i00', 'n0000160i00'],hue='crossover-operator',
                 style='crossover-operator',kind='line',col_wrap=3)
     res.set(xscale="log")
     res.fig.subplots_adjust(top=.9)
@@ -19,7 +19,7 @@ def make_suc_perc_plot(df):
     plt.savefig("suc-perc-plot.png")
 
 def make_eval_plot(df):
-    instances = df['instance'].unique()
+    instances = ['n0000010i00', 'n0000020i00', 'n0000040i00', 'n0000080i00', 'n0000160i00']
     crossovers = df['crossover-operator'].unique()
     fig, axs = plt.subplots(2, 3,figsize=(16.92,10),sharey=True)
     fig.subplots_adjust(right=.85,top=.9)
@@ -59,4 +59,5 @@ if __name__ == '__main__':
     df = pd.read_csv("results/output.txt", header=None)
     df.set_axis(col_names, axis=1, inplace=True)
     df = df[df['pop-size'].isin([4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048])]
+    make_suc_perc_plot(df)
     make_eval_plot(df)
