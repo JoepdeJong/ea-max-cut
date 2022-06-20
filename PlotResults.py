@@ -51,6 +51,43 @@ def make_eval_plot(df):
     axs.flat[2].set(xlabel='Population Size',ylabel="")
     plt.savefig("evaluations_plot.png")
 
+def make_plot_evals_crossover_growing_size(df,pop_size):
+    fig, ax = plt.subplots()
+    custom = df[df['crossover-operator'] == ' CustomCrossover']
+    custom = custom[custom["pop-size"] == pop_size ]
+    custom['instance-size'] = custom.apply(lambda row: int(row.instance[5:8]),axis=1)
+
+    ax.plot(np.sort(custom['instance-size']), np.sort(custom['50-perc']))
+    ax.fill_between(np.sort(custom['instance-size']), np.sort(custom['10-perc']), np.sort(custom['90-perc']), alpha=0.2)
+    ax.set(xlabel='Size of graph in nodes', ylabel='Number of evaluations needed')
+    plt.show()
+
+def make_plots_evals_crossover_growing_size(df,pop_sizes):
+    custom = df[df['crossover-operator'] == ' CustomCrossover']
+    custom = custom[custom["pop-size"].isin(pop_sizes)]
+    custom['instance-size'] = custom.apply(lambda row: int(row.instance[5:8]),axis=1)
+    fig, axs = plt.subplots(2, 3,figsize=(16.92,10))
+    # axs[-1, -1].axis('off')
+    # fig.subplots_adjust(right=.85, top=.9)
+    fig.suptitle('Number of evaluations needed for larger graphs using the CustomCrossover operator.')
+    for idx, pop_size in enumerate(pop_sizes):
+        this_custom = custom[custom["pop-size"] == pop_size]
+        col_idx = idx % 3
+        row_idx = math.trunc(idx / 3)
+        ax = axs[row_idx, col_idx]
+        ax.set_title(f'Population Size = {pop_size}')
+        ax.plot(np.sort(this_custom['instance-size']), np.sort(this_custom['50-perc']))
+        ax.fill_between(np.sort(this_custom['instance-size']), np.sort(this_custom['10-perc']), np.sort(this_custom['90-perc']), alpha=0.2)
+        if idx <= 2:
+            plt.setp(ax.get_xticklabels(), visible=False)
+        else:
+            ax.set(xlabel='Size of graph in nodes')
+
+        if idx in [0, 3]:
+            ax.set(ylabel='Number of evaluations')
+        else:
+            pass
+    plt.savefig("custom_crossover_growing_number_of_evals.png")
 
 
 if __name__ == '__main__':
@@ -59,5 +96,6 @@ if __name__ == '__main__':
     df = pd.read_csv("results/output.txt", header=None)
     df.set_axis(col_names, axis=1, inplace=True)
     df = df[df['pop-size'].isin([4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048])]
-    make_suc_perc_plot(df)
-    make_eval_plot(df)
+    # make_suc_perc_plot(df)
+    # make_eval_plot(df)
+    make_plots_evals_crossover_growing_size(df,[16, 32, 64, 128,256,512])
