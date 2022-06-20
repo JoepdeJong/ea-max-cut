@@ -79,7 +79,7 @@ def make_plots_evals_crossover_growing_size(df,pop_sizes):
         ax.plot(np.sort(this_custom['instance-size']), np.sort(this_custom['50-perc']))
         ax.fill_between(np.sort(this_custom['instance-size']), np.sort(this_custom['10-perc']), np.sort(this_custom['90-perc']), alpha=0.2)
         if idx <= 2:
-            plt.setp(ax.get_xticklabels(), visible=False)
+            pass
         else:
             ax.set(xlabel='Size of graph in nodes')
 
