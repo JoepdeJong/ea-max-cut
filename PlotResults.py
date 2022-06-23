@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.ticker import PercentFormatter
 
 sns.set_theme()
 sns.set_palette(sns.color_palette("Set2"))
@@ -15,6 +16,8 @@ def make_suc_perc_plot(df):
     res.fig.subplots_adjust(top=.9)
     res.set(xlabel="Population size")
     res.set(ylabel="Percentage of successful runs")
+    for ax in res.axes.flat:
+        ax.yaxis.set_major_formatter(PercentFormatter(1))
     res.fig.suptitle('Percentage of succes for different population sizes for different crossover-operators for different instances')
     plt.savefig("suc-perc-plot.png")
 
@@ -96,6 +99,6 @@ if __name__ == '__main__':
     df = pd.read_csv("results/output.txt", header=None)
     df.set_axis(col_names, axis=1, inplace=True)
     df = df[df['pop-size'].isin([4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048])]
-    # make_suc_perc_plot(df)
+    make_suc_perc_plot(df)
     # make_eval_plot(df)
-    make_plots_evals_crossover_growing_size(df,[16, 32, 64, 128,256,512])
+    # make_plots_evals_crossover_growing_size(df,[16, 32, 64, 128,256,512])
